@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "underwriting-dashboard"
+version = "0.1.0"
+description = "An automated real estate underwriting model monitoring and visualization system"
+readme = "README.md"
+authors = [
+    {name = "B&R Capital", email = "example@brcapital.com"}
+]
+license = {text = "Proprietary - B&R Capital"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Topic :: Office/Business :: Financial",
+    "Private :: Do Not Upload"
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "openpyxl>=3.1.0",
+    "pyxlsb>=1.0.10",
+    "xlrd>=2.0.1",
+    "streamlit>=1.25.0",
+    "plotly>=5.15.0",
+    "folium>=0.14.0",
+    "streamlit-folium>=0.12.0",
+    "watchdog>=3.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.3.0",
+    "flake8>=6.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.3.0",
+    "pytest>=7.4.0"
+]
+
+[project.urls]
+"Homepage" = "https://brcapital.com"
+"Repository" = "https://github.com/brcapital/underwriting-dashboard"
+
+[project.scripts]
+underwriting-dashboard = "src.main:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
