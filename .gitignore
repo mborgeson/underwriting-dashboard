@@ -10,6 +10,11 @@
 ehthumbs.db
 Thumbs.db
 
+# database files
+*.db
+*.sqlite
+*.sqlite3
+
 # Editor directories and files
 .idea/
 .vscode/
@@ -186,8 +191,7 @@ dmypy.json
 .history/
 
 # Strange encoded Windows Path
-C:\\357\\200\\272/
-
+C:\Users\MattBorgeson\OneDrive - B&R Capital\Programming Projects\Underwriting Dashboard\C\*
 
 # GITHUB Python.gitignore Repository
 ## https://github.com/github/gitignore/blob/main/Python.gitignore
