@@ -40,7 +40,7 @@ from src.config.settings import settings
 from src.dashboard.components.filters import render_sidebar_filters
 from src.dashboard.components.tables import render_data_table
 from src.dashboard.components.maps import render_property_map
-from src.dashboard.utils.data_processing_fix import process_data_for_display, get_key_metrics
+from src.dashboard.utils.data_processing import process_data_for_display, get_key_metrics
 from src.dashboard.utils.responsive import set_device_type, is_mobile_device, get_screen_info
 from src.dashboard.components.layout import responsive_row, mobile_friendly_tabs
 
@@ -385,12 +385,12 @@ def render_analytics(data, is_mobile=False):
         return
     
     # Import the analytics components
-    from src.dashboard.components.analytics_fix import (
-    render_deal_stage_distribution,
-    render_geographic_analysis,
-    render_performance_metrics,
-    render_deal_timeline
-)
+    from src.dashboard.components.analytics import (
+        render_deal_stage_distribution,
+        render_geographic_analysis,
+        render_performance_metrics,
+        render_deal_timeline
+    )
     
     # Create analytics sections
     st.title("Underwriting Analytics Dashboard")
@@ -450,19 +450,17 @@ def render_analytics(data, is_mobile=False):
         else:
             st.metric("Latest Activity", "N/A")
     
-    # Use tabs instead of expanders to avoid nesting issues
-    tab1, tab2, tab3, tab4 = st.tabs(["Deal Stage", "Geographic Analysis", "Performance Metrics", "Deal Timeline"])
-    
-    with tab1:
+    # Create expandable sections for different analytics
+    with st.expander("Deal Stage Distribution", expanded=True):
         render_deal_stage_distribution(data)
     
-    with tab2:
+    with st.expander("Geographic Analysis", expanded=True):
         render_geographic_analysis(data)
     
-    with tab3:
+    with st.expander("Performance Metrics", expanded=False):
         render_performance_metrics(data)
     
-    with tab4:
+    with st.expander("Deal Timeline", expanded=False):
         render_deal_timeline(data)
 
 def render_footer():

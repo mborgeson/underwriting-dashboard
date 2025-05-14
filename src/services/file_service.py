@@ -12,8 +12,8 @@ import pandas as pd
 from pathlib import Path
 
 from src.data_processing.file_finder import find_underwriting_files
-from src.data_processing.excel_reader import process_excel_files
-from src.database.db_manager import store_data
+from src.data_processing.excel_reader_optimized import process_excel_files
+from src.database.db_manager_optimized import store_data, process_excel_batch
 
 logger = logging.getLogger(__name__)
 
@@ -92,4 +92,60 @@ class FileService:
             
         except Exception as e:
             logger.error(f"Error updating database: {str(e)}", exc_info=True)
+            return False
+            
+    @staticmethod
+    def batch_process_files(max_files: int = None) -> bool:
+        """
+        Find and process multiple files in efficient batches.
+        
+        Args:
+            max_files: Maximum number of files to process (None for all)
+            
+        Returns:
+            True if the database was successfully updated, False otherwise
+        """
+        try:
+            included_files, _ = FileService.find_files()
+            
+            if not included_files:
+                logger.warning("No underwriting files found to process")
+                return False
+                
+            # Limit the number of files if specified
+            if max_files and len(included_files) > max_files:
+                included_files = included_files[:max_files]
+                
+            logger.info(f"Batch processing {len(included_files)} files")
+            
+            # Process files in smaller chunks for memory efficiency
+            chunk_size = 5  # Process 5 files at a time
+            dataframes = []
+            
+            for i in range(0, len(included_files), chunk_size):
+                chunk = included_files[i:i+chunk_size]
+                logger.info(f"Processing chunk of {len(chunk)} files ({i+1}-{i+len(chunk)} of {len(included_files)})")
+                
+                # Process this chunk of files
+                chunk_data = FileService.process_files(chunk)
+                
+                if not chunk_data.empty:
+                    dataframes.append(chunk_data)
+            
+            if not dataframes:
+                logger.warning("No data extracted from any files")
+                return False
+                
+            # Use the batch processing feature for better performance
+            result = process_excel_batch(dataframes)
+            
+            if result:
+                logger.info(f"Successfully batch processed {len(included_files)} files")
+            else:
+                logger.warning("Batch processing completed but with errors")
+                
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in batch processing: {str(e)}", exc_info=True)
             return False

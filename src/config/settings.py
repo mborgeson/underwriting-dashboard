@@ -75,6 +75,12 @@ class Settings:
             return Path(path_str)
         if default is not None:
             return default
+        
+        # Special case for DEALS_ROOT
+        if env_var == "DEALS_ROOT":
+            logger.warning(f"DEALS_ROOT environment variable not set, using default empty path")
+            return Path()
+        
         raise ValueError(f"Required path environment variable {env_var} not set")
     
     def _get_list_env(self, env_var: str, default: List[str]) -> List[str]:

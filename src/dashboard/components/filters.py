@@ -21,8 +21,7 @@ if project_root not in sys.path:
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from src.database.db_manager import DatabaseManager
-from config.config import DATABASE_TABLE
+from src.config.settings import settings
 import sys
 from pathlib import Path
 
@@ -30,7 +29,7 @@ from pathlib import Path
 project_root = str(Path(__file__).resolve().parents[3])
 sys.path.append(project_root)
 
-from src.database.db_manager import get_column_values, DatabaseManager
+from src.database.db_manager_optimized import get_column_values, DatabaseManager
 
 def render_deal_stage_filters():
     """Render deal stage filter components."""
@@ -87,7 +86,7 @@ def render_property_filters():
 
 def render_date_filters():
     """Render date filter components."""
-    date_col_options = ["Last_Modified_Date", "Date_Uploaded"]
+    date_col_options = ["Last Modified Date", "Date Uploaded"]
     date_column = st.selectbox(
         "Date Column",
         options=date_col_options,
@@ -100,8 +99,8 @@ def render_date_filters():
         db_manager.connect()
         
         # Use proper SQL syntax for min/max
-        min_query = f"SELECT MIN({date_column}) FROM {DATABASE_TABLE}"
-        max_query = f"SELECT MAX({date_column}) FROM {DATABASE_TABLE}"
+        min_query = f"SELECT MIN({date_column}) FROM {settings.database_table}"
+        max_query = f"SELECT MAX({date_column}) FROM {settings.database_table}"
         
         db_manager.cursor.execute(min_query)
         min_date_str = db_manager.cursor.fetchone()[0]
@@ -213,9 +212,17 @@ def render_sidebar_filters(compact=False):
     # Deal Stage filter
     st.sidebar.subheader("Deal Stage")
     
-    # Get real deal stages from database when ready
-    deal_stages = ["0) Dead Deals", "1) Initial UW and Review", "2) Active UW and Review", 
-                  "3) Deals Under Contract", "4) Closed Deals", "5) Realized Deals"]
+    try:
+        # Try to get deal stages from the database
+        deal_stages = get_column_values("Deal Stage Subdirectory Name")
+        if not deal_stages:
+            # Fallback if no values found
+            deal_stages = ["0) Dead Deals", "1) Initial UW and Review", "2) Active UW and Review", 
+                          "3) Deals Under Contract", "4) Closed Deals", "5) Realized Deals"]
+    except:
+        # Fallback to defaults if error occurs
+        deal_stages = ["0) Dead Deals", "1) Initial UW and Review", "2) Active UW and Review", 
+                      "3) Deals Under Contract", "4) Closed Deals", "5) Realized Deals"]
     
     selected_stages = st.sidebar.multiselect(
         "Select Deal Stages",
@@ -228,9 +235,9 @@ def render_sidebar_filters(compact=False):
         
     # Update filters in session state
     if selected_stages:
-        st.session_state['filters']['Deal_Stage_Subdirectory_Name'] = selected_stages
-    elif 'Deal_Stage_Subdirectory_Name' in st.session_state['filters']:
-        del st.session_state['filters']['Deal_Stage_Subdirectory_Name']
+        st.session_state['filters']['Deal Stage Subdirectory Name'] = selected_stages
+    elif 'Deal Stage Subdirectory Name' in st.session_state['filters']:
+        del st.session_state['filters']['Deal Stage Subdirectory Name']
         st.session_state['data'] = None  # Force data reload
     
     st.sidebar.markdown("---")
@@ -259,7 +266,7 @@ def render_sidebar_filters(compact=False):
     # Date filters
     st.sidebar.subheader("Date Filters")
     
-    date_col_options = ["Last_Modified_Date", "Date_Uploaded"]
+    date_col_options = ["Last Modified Date", "Date Uploaded"]
     date_column = st.sidebar.selectbox(
         "Date Column",
         options=date_col_options,
