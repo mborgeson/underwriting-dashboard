@@ -7,8 +7,19 @@ This is the main entry point for the Streamlit dashboard application.
 It loads data from the SQLite database and renders the dashboard interface.
 """
 
-import os
+# --- Import Fix for Streamlit ---
 import sys
+import os
+from pathlib import Path
+
+# Add the project root to the Python path
+project_root = str(Path(__file__).resolve().parents[2])
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# ---------------------------
+
+
+import os
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -21,19 +32,15 @@ import sqlite3
 import json
 from PIL import Image
 
-# Add project root to path for imports
-project_root = str(Path(__file__).resolve().parents[2])
-sys.path.append(project_root)
+# Import only what we need from the service layer
+from src.services.dashboard_service import DashboardService
+from src.config.settings import settings
 
-# Import modules
-from src.database.db_manager import get_all_data, get_filtered_data, search_data
+# Use absolute imports for modules
 from src.dashboard.components.filters import render_sidebar_filters
 from src.dashboard.components.tables import render_data_table
 from src.dashboard.components.maps import render_property_map
 from src.dashboard.utils.data_processing import process_data_for_display, get_key_metrics
-from config.config import DATABASE_PATH, DATABASE_TABLE
-
-# Add imports for responsive components
 from src.dashboard.utils.responsive import set_device_type, is_mobile_device, get_screen_info
 from src.dashboard.components.layout import responsive_row, mobile_friendly_tabs
 
@@ -164,13 +171,11 @@ def initialize_session_state():
 def load_data():
     """Load data from the database based on current filters and search term."""
     try:
-        # Check if there are active filters
-        if st.session_state['filters']:
-            data = get_filtered_data(st.session_state['filters'])
-        elif st.session_state['search_term']:
-            data = search_data(st.session_state['search_term'])
-        else:
-            data = get_all_data()
+        # Use the dashboard service to get data
+        data = DashboardService.get_dashboard_data(
+            filters=st.session_state.get('filters', {}),
+            search_term=st.session_state.get('search_term', "")
+        )
         
         # Process data for display
         if not data.empty:
@@ -503,17 +508,7 @@ def run_dashboard():
     # Get screen information
     screen_info = get_screen_info()
     
-    # # Debug information section
-    # with st.expander("Debug Information", expanded=False):
-    #     st.write(f"Detected device: {'Mobile' if is_mobile_device() else 'Desktop'}")
-    #     st.write(f"Screen info: {screen_info}")
-    #     st.write(f"Browser width: {screen_info.get('browser_width', 'Unknown')}")
-    #     st.write(f"Active filters: {st.session_state.get('filters', {})}")
-    #     st.write(f"Data loaded: {st.session_state['data'] is not None}")
-    #     st.write(f"Last refresh time: {st.session_state['last_refresh'].strftime('%Y-%m-%d %H:%M:%S')}")
-    
     # Render sidebar filters - conditional: more compact on mobile
-    # st.sidebar.title("DEBUG: SIDEBAR TEST")  # Test if sidebar appears at all
     render_sidebar_filters(compact=screen_info['is_mobile'])
     
     # Load data if not already loaded

@@ -6,6 +6,18 @@ Dashboard Tables Component
 This module provides the data table functionality for the Underwriting Dashboard.
 """
 
+# --- Import Fix for Streamlit ---
+import sys
+import os
+from pathlib import Path
+
+# Add the project root to the Python path
+project_root = str(Path(__file__).resolve().parents[3])
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# ---------------------------
+
+
 import streamlit as st
 import pandas as pd
 import sys

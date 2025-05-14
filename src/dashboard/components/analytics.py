@@ -4,6 +4,18 @@ Analytics Components for Underwriting Dashboard
 This module provides advanced data visualization components for analyzing real estate deals.
 """
 
+# --- Import Fix for Streamlit ---
+import sys
+import os
+from pathlib import Path
+
+# Add the project root to the Python path
+project_root = str(Path(__file__).resolve().parents[3])
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+# ---------------------------
+
+
 import streamlit as st
 import pandas as pd
 import numpy as np

@@ -2,79 +2,65 @@
 Underwriting Dashboard - Main Application
 
 This script initializes and runs the underwriting dashboard application.
+It uses the service layer to coordinate between components.
 """
 
 import logging
-from pathlib import Path
-import time
+import subprocess
 import sys
 import os
-import subprocess
-import threading
+from pathlib import Path
+
+# Import the package to initialize paths
+import src
+
+# Import settings
+from src.config.settings import settings
 
 # Set up logging
-from config.config import LOGS_DIR
 logging.basicConfig(
-    filename=Path(LOGS_DIR) / "app.log",
+    filename=settings.logs_dir / "app.log",
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-def start_monitoring_thread():
-    """Start the file monitoring in a separate thread."""
-    try:
-        from src.file_monitoring.monitor import start_monitoring
-        logger.info("Starting file monitoring")
-        start_monitoring()
-    except Exception as e:
-        logger.error(f"Error in file monitoring: {str(e)}", exc_info=True)
 
 def main():
     """Initialize and run the underwriting dashboard application."""
     try:
         logger.info("Starting Underwriting Dashboard application")
         
-        # Import modules
-        from src.data_processing.file_finder import find_underwriting_files
-        from src.data_processing.excel_reader import process_excel_files
-        from src.database.db_manager import setup_database, store_data
+        # Import services
+        from src.database.db_manager import setup_database
+        from src.services.file_service import FileService
+        from src.services.monitoring_service import monitoring_service
         
         # Initial setup
         logger.info("Setting up database")
         setup_database()
         
-        # Find and process files
-        logger.info("Finding underwriting files")
-        include_files, exclude_files = find_underwriting_files()
+        # Process files and update database
+        logger.info("Processing files and updating database")
+        if not FileService.update_database():
+            logger.warning("No files processed or database update failed")
         
-        logger.info(f"Processing {len(include_files)} underwriting files")
-        data = process_excel_files(include_files)
+        # Start monitoring in the background
+        logger.info("Starting file monitoring")
+        monitoring_service.start_monitoring()
         
-        # Store data
-        logger.info("Storing data in database")
-        store_data(data)
-        
-        # Start monitoring in a background thread
-        monitor_thread = threading.Thread(target=start_monitoring_thread)
-        monitor_thread.daemon = True
-        monitor_thread.start()
-        
-        # Launch Streamlit dashboard - using a more reliable approach
+        # Launch Streamlit dashboard
         logger.info("Starting dashboard")
-        dashboard_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                      "src", "dashboard", "app.py")
+        dashboard_script = Path(__file__).parent / "run_dashboard.py"
         
-        print(f"Launching Streamlit dashboard at: {dashboard_path}")
+        print(f"Launching Streamlit dashboard...")
         
-        # Use subprocess instead of os.system for better control and output capture
-        if os.path.exists(dashboard_path):
+        if dashboard_script.exists():
             # Use subprocess for better handling
-            subprocess.Popen(["streamlit", "run", dashboard_path])
+            subprocess.Popen([sys.executable, str(dashboard_script)])
             print(f"Streamlit dashboard started at http://localhost:8501")
         else:
-            print(f"ERROR: Dashboard file not found at {dashboard_path}")
-            logger.error(f"Dashboard file not found at {dashboard_path}")
+            print(f"ERROR: Dashboard launcher script not found at {dashboard_script}")
+            logger.error(f"Dashboard launcher script not found at {dashboard_script}")
         
     except Exception as e:
         logger.error(f"Error in main application: {str(e)}", exc_info=True)
